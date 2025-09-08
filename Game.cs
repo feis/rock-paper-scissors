@@ -3,6 +3,13 @@ using System.Text;
 internal class Game
 {
     private readonly Random random = new();
+    private readonly TextVerticalGroup mainTextVerticalGroup = new();
+    private readonly Text promptText;
+    private readonly Text spinnerText;
+    private readonly Text playerChoiceText;
+    private readonly Text computerChoiceText;
+    private readonly Text resultText;
+    
     private GameChoice? playerChoice;
     private GameChoice computerChoice;
     private GameResult gameResult;
@@ -12,12 +19,28 @@ internal class Game
     private int animationIndex;
     private double elapsedTime;
     
+    public Game()
+    {
+        promptText = new Text("1:石頭, 2:布, 3:剪刀");
+        spinnerText = new Text("");
+        playerChoiceText = new Text("");
+        computerChoiceText = new Text("");
+        resultText = new Text("");
+        
+        mainTextVerticalGroup.Add(promptText);
+        mainTextVerticalGroup.Add(spinnerText);
+        mainTextVerticalGroup.Add(playerChoiceText);
+        mainTextVerticalGroup.Add(computerChoiceText);
+        mainTextVerticalGroup.Add(resultText);
+    }
+    
     public bool IsFinished => currentState == GameState.Finished;
 
     public void Update(double deltaTime, StringBuilder frameBuffer)
     {
         elapsedTime += deltaTime;
-
+        frameBuffer.Clear();
+        
         switch (currentState)
         {
             case GameState.GameStart:
@@ -28,7 +51,7 @@ internal class Game
             {
                 if (Console.KeyAvailable)
                 {
-                    var keyInfo = Console.ReadKey(true);
+                    ConsoleKeyInfo keyInfo = Console.ReadKey(true);
                     string input = keyInfo.KeyChar.ToString();
 
                     if (int.TryParse(input, out int choice) && choice is >= 1 and <= 3)
@@ -41,8 +64,6 @@ internal class Game
                     }
                 }
                 animationIndex = (int)Math.Round(elapsedTime / 0.25);
-                
-                RenderWaitingForInput(frameBuffer);
                 break;
             }
             case GameState.RoundCompleted:
@@ -50,12 +71,10 @@ internal class Game
                 {
                     currentState = GameState.GameEnding;
                     gameEndTime = elapsedTime;
-                    RenderRoundResult(frameBuffer);
                 }
                 else
                 {
                     currentState = GameState.DrawWaiting;
-                    RenderRoundResult(frameBuffer);
                 }
                 break;
                 
@@ -65,10 +84,7 @@ internal class Game
                 {
                     playerChoice = null;
                     currentState = GameState.WaitingForInput;
-                    break;
                 }
-                
-                RenderRoundResult(frameBuffer);
                 break;
             }
             case GameState.GameEnding:
@@ -76,10 +92,7 @@ internal class Game
                 if (elapsedTime - gameEndTime >= 1)
                 {
                     currentState = GameState.Finished;
-                    break;
                 }
-                
-                RenderRoundResult(frameBuffer);
                 break;
             }
             case GameState.Finished:
@@ -87,6 +100,53 @@ internal class Game
             
             default:
                 throw new ArgumentOutOfRangeException();
+        }
+        
+        UpdateTextElements();
+        mainTextVerticalGroup.Render(frameBuffer);
+    }
+    
+    private void UpdateTextElements()
+    {
+        switch (currentState)
+        {
+            case GameState.WaitingForInput:
+                promptText.SetActive(true);
+                spinnerText.SetActive(true);
+                playerChoiceText.SetActive(false);
+                computerChoiceText.SetActive(false);
+                resultText.SetActive(false);
+                
+                char[] spinChars = ['|', '/', '-', '\\'];
+                spinnerText.SetContent($"請選擇你的動作 (1-3) {spinChars[animationIndex % 4]}");
+                break;
+                
+            case GameState.RoundCompleted:
+            case GameState.DrawWaiting:
+            case GameState.GameEnding:
+                promptText.SetActive(false);
+                spinnerText.SetActive(false);
+                playerChoiceText.SetActive(true);
+                computerChoiceText.SetActive(true);
+                resultText.SetActive(true);
+                
+                if (playerChoice.HasValue)
+                {
+                    playerChoiceText.SetContent($"你剛選擇了: {GetChoiceName(playerChoice.Value)}");
+                    computerChoiceText.SetContent($"電腦選擇了: {GetChoiceName(computerChoice)}");
+                    resultText.SetContent(GetResultMessage(gameResult));
+                }
+                break;
+
+            case GameState.GameStart:
+            case GameState.Finished:
+            default:
+                promptText.SetActive(false);
+                spinnerText.SetActive(false);
+                playerChoiceText.SetActive(false);
+                computerChoiceText.SetActive(false);
+                resultText.SetActive(false);
+                break;
         }
     }
 
@@ -129,20 +189,5 @@ internal class Game
             GameResult.Draw => "平手！",
             _ => throw new ArgumentOutOfRangeException()
         };
-    }
-    
-    private void RenderWaitingForInput(StringBuilder frameBuffer)
-    {
-        frameBuffer.AppendLine("1:石頭, 2:布, 3:剪刀");
-        char[] spinChars = ['|', '/', '-', '\\'];
-        frameBuffer.Append($"請選擇你的動作 (1-3) {spinChars[animationIndex % 4]}");
-    }
-    
-    private void RenderRoundResult(StringBuilder frameBuffer)
-    {
-        frameBuffer.Append($"你剛選擇了: {GetChoiceName(playerChoice!.Value)}");
-        frameBuffer.AppendLine();
-        frameBuffer.AppendLine($"電腦選擇了: {GetChoiceName(computerChoice)}");
-        frameBuffer.AppendLine(GetResultMessage(gameResult));
     }
 }
