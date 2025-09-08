@@ -17,7 +17,6 @@ internal class Game
     public void Update(double deltaTime, StringBuilder frameBuffer)
     {
         elapsedTime += deltaTime;
-        frameBuffer.Clear();
 
         switch (currentState)
         {

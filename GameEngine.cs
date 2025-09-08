@@ -14,6 +14,7 @@ internal class GameEngine
         {
             double lastFrameTime = frameTimer.ElapsedMilliseconds / 1000.0;
             frameTimer.Restart();
+            frameBuffer.Clear();
             game.Update(lastFrameTime, frameBuffer);
             WaitForFPS();
             SwapBuffer(frameBuffer.ToString());
