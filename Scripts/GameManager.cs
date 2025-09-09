@@ -1,8 +1,7 @@
 using System.Text;
+using Engine;
 
-namespace Game;
-
-internal class GameManager : IGameObject
+internal class GameManager : GameObject
 {
     public static GameManager? Instance;
     
@@ -27,7 +26,7 @@ internal class GameManager : IGameObject
         Instance = this;
     }
     
-    void IGameObject.Update(double deltaTime)
+    public override void Update(double deltaTime)
     {
         elapsedTime += deltaTime;
         
@@ -93,7 +92,7 @@ internal class GameManager : IGameObject
         }
     }
 
-    void IGameObject.Render(StringBuilder frameBuffer)
+    public override void Render(StringBuilder frameBuffer)
     {
     }
 

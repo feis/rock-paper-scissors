@@ -1,14 +1,19 @@
 using System.Text;
+using Engine;
 
-namespace Game;
-
-internal class SpinnerText : IGameObject
+internal class SpinnerText : GameObject, ITextProvider
 {
+    [SerializeField]
+    private string baseMessage = "請選擇你的動作 (1-3)";
+    
+    [SerializeField] 
+    private double animationSpeed = 0.25;
+    
     private readonly Text text = new();
     private readonly char[] spinChars = ['|', '/', '-', '\\'];
     private double elapsedTime;
 
-    void IGameObject.Update(double deltaTimee)
+    public override void Update(double deltaTime)
     {
         GameState state = GameManager.Instance!.GetCurrentState();
         
@@ -16,8 +21,8 @@ internal class SpinnerText : IGameObject
         {
             text.SetActive(true);
             elapsedTime = GameManager.Instance.GetElapsedTime();
-            int animationIndex = (int)Math.Round(elapsedTime / 0.25);
-            text.SetContent($"請選擇你的動作 (1-3) {spinChars[animationIndex % 4]}");
+            int animationIndex = (int)Math.Round(elapsedTime / animationSpeed);
+            text.SetContent($"{baseMessage} {spinChars[animationIndex % 4]}");
         }
         else
         {
@@ -25,7 +30,7 @@ internal class SpinnerText : IGameObject
         }
     }
 
-    void IGameObject.Render(StringBuilder frameBuffer)
+    public override void Render(StringBuilder frameBuffer)
     {
     }
 

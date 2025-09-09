@@ -1,12 +1,11 @@
 using System.Text;
+using Engine;
 
-namespace Game;
-
-internal class ResultText : IGameObject
+internal class ResultText : GameObject, ITextProvider
 {
     private readonly Text text = new();
 
-    void IGameObject.Update(double deltaTime)
+    public override void Update(double deltaTime)
     {
         GameState state = GameManager.Instance!.GetCurrentState();
         GameResult gameResult = GameManager.Instance.GetGameResult();
@@ -22,7 +21,7 @@ internal class ResultText : IGameObject
         }
     }
 
-    void IGameObject.Render(StringBuilder frameBuffer)
+    public override void Render(StringBuilder frameBuffer)
     {
     }
 

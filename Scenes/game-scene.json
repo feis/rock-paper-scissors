@@ -1,0 +1,49 @@
+{
+  "name": "GameScene",
+  "gameObjects": [
+    {
+      "type": "GameManager",
+      "name": "GameManager"
+    },
+    {
+      "type": "PromptText",
+      "name": "PromptText",
+      "properties": {
+        "promptMessage": "1:石頭, 2:布, 3:剪刀"
+      }
+    },
+    {
+      "type": "SpinnerText", 
+      "name": "SpinnerText",
+      "properties": {
+        "baseMessage": "請選擇你的動作 (1-3)",
+        "animationSpeed": 0.15
+      }
+    },
+    {
+      "type": "PlayerChoiceText",
+      "name": "PlayerChoiceText"
+    },
+    {
+      "type": "ComputerChoiceText",
+      "name": "ComputerChoiceText"
+    },
+    {
+      "type": "ResultText",
+      "name": "ResultText"
+    },
+    {
+      "type": "TextVerticalGroup",
+      "name": "MainTextGroup",
+      "properties": {
+        "textElements": [
+          "PromptText",
+          "SpinnerText",
+          "PlayerChoiceText",
+          "ComputerChoiceText",
+          "ResultText"
+        ]
+      }
+    }
+  ]
+}

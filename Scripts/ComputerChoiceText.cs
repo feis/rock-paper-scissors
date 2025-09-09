@@ -1,11 +1,10 @@
 using System.Text;
+using Engine;
 
-namespace Game;
-
-internal class ComputerChoiceText : IGameObject
+internal class ComputerChoiceText : GameObject, ITextProvider
 {
     private readonly Text text = new();
-    void IGameObject.Update(double deltaTime)
+    public override void Update(double deltaTime)
     {
         GameState state = GameManager.Instance!.GetCurrentState();
         GameChoice computerChoice = GameManager.Instance.GetComputerChoice();
@@ -21,7 +20,7 @@ internal class ComputerChoiceText : IGameObject
         }
     }
 
-    void IGameObject.Render(StringBuilder frameBuffer)
+    public override void Render(StringBuilder frameBuffer)
     {
     }
 

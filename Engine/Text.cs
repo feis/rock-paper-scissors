@@ -1,9 +1,11 @@
 using System.Text;
 
+namespace Engine;
+
 internal class Text : ITextRenderer
 {
     private string content;
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; private set; }
 
     public Text()
     {
@@ -27,8 +29,6 @@ internal class Text : ITextRenderer
 
     public void Render(StringBuilder buffer)
     {
-        if (!IsActive) return;
-        
         buffer.Append(content);
     }
 }

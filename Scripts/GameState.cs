@@ -1,5 +1,3 @@
-namespace Game;
-
 internal enum GameState
 {
     GameStart = 0,

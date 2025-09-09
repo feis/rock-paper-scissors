@@ -1,21 +1,21 @@
 using System.Text;
+using Engine;
 
-namespace Game;
-
-internal class TextVerticalGroup : IGameObject
+internal class TextVerticalGroup : GameObject
 {
-    private readonly List<ITextRenderer> textElements = new();
+    [SerializeField]
+    private List<ITextRenderer> textElements = new();
 
     public void Add(ITextRenderer textElement)
     {
         textElements.Add(textElement);
     }
 
-    public void Update(double deltaTime)
+    public override void Update(double deltaTime)
     {
     }
 
-    public void Render(StringBuilder frameBuffer)
+    public override void Render(StringBuilder frameBuffer)
     {
         foreach (ITextRenderer element in textElements.Where(element => element.IsActive))
         {

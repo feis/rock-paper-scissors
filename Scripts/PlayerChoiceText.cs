@@ -1,12 +1,11 @@
 using System.Text;
+using Engine;
 
-namespace Game;
-
-internal class PlayerChoiceText : IGameObject
+internal class PlayerChoiceText : GameObject, ITextProvider
 {
     private readonly Text text = new();
 
-    void IGameObject.Update(double deltaTime)
+    public override void Update(double deltaTime)
     {
         GameState state = GameManager.Instance!.GetCurrentState();
         var playerChoice = GameManager.Instance.GetPlayerChoice();
@@ -21,7 +20,7 @@ internal class PlayerChoiceText : IGameObject
         }
     }
 
-    void IGameObject.Render(StringBuilder frameBuffer)
+    public override void Render(StringBuilder frameBuffer)
     {
     }
 
