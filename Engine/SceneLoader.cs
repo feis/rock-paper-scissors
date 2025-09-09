@@ -11,11 +11,8 @@ internal static class SceneLoader
         gameObjects.Clear();
         
         string jsonContent = File.ReadAllText(scenePath);
-        
-        SceneDefinition? scene = JsonSerializer.Deserialize<SceneDefinition>(jsonContent, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+
+        SceneDefinition? scene = JsonSerializer.Deserialize<SceneDefinition>(jsonContent);
         
         if (scene == null)
         {
@@ -23,42 +20,51 @@ internal static class SceneLoader
         }
         
         Dictionary<string, GameObject> namedObjects = new();
-        List<(GameObject gameObject, Dictionary<string, JsonElement> properties)> pendingObjectReferences = new();
+        
+        List<(Component component, Dictionary<string, JsonElement> properties)> pendingComponentReferences = new();
         
         foreach (GameObjectDefinition objDef in scene.GameObjects)
         {
-            GameObject? gameObject = CreateGameObject(objDef.Type);
-
-            if (gameObject == null) continue;
-
-            if (objDef.Properties != null)
-            {
-                SetSerializeFields(gameObject, objDef.Properties);
-                    
-                if (HasObjectReferences(gameObject))
-                {
-                    pendingObjectReferences.Add((gameObject, objDef.Properties));
-                }
-            }
-                
-            gameObjects.Add(gameObject);
-                
+            GameObject gameObject = new();
+            
             if (!string.IsNullOrEmpty(objDef.Name))
             {
+                gameObject.Name = objDef.Name;
                 namedObjects[objDef.Name] = gameObject;
+                GameObject.NamedGameObjects[objDef.Name] = gameObject;
             }
+            
+            foreach (ComponentDefinition compDef in objDef.Components)
+            {
+                Component? component = CreateComponent(compDef.Type);
+                
+                if (component == null) continue;
+                
+                gameObject.AddComponent(component);
+
+                if (compDef.Properties == null) continue;
+                
+                SetSerializeFields(component, compDef.Properties);
+                    
+                if (HasObjectReferences(component))
+                {
+                    pendingComponentReferences.Add((component, compDef.Properties));
+                }
+            }
+            
+            gameObjects.Add(gameObject);
         }
         
-        foreach ((GameObject gameObject, Dictionary<string, JsonElement> properties) in pendingObjectReferences)
+        foreach ((Component component, Dictionary<string, JsonElement> properties) in pendingComponentReferences)
         {
-            SetObjectReferences(gameObject, properties, namedObjects);
+            SetObjectReferences(component, properties, namedObjects);
         }
     }
     
     
-    private static void SetSerializeFields(GameObject gameObject, Dictionary<string, JsonElement> properties)
+    private static void SetSerializeFields(Component component, Dictionary<string, JsonElement> properties)
     {
-        Type type = gameObject.GetType();
+        Type type = component.GetType();
         
         FieldInfo[] fields = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
 
@@ -76,14 +82,14 @@ internal static class SceneLoader
             
             if (convertedValue != null)
             {
-                field.SetValue(gameObject, convertedValue);
+                field.SetValue(component, convertedValue);
             }
         }
     }
     
-    private static bool HasObjectReferences(GameObject gameObject)
+    private static bool HasObjectReferences(Component component)
     {
-        Type type = gameObject.GetType();
+        Type type = component.GetType();
         
         FieldInfo[] fields = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
         
@@ -101,7 +107,7 @@ internal static class SceneLoader
     
     private static bool IsObjectReferenceType(Type type)
     {
-        if (typeof(GameObject).IsAssignableFrom(type) || typeof(ITextRenderer).IsAssignableFrom(type))
+        if (typeof(GameObject).IsAssignableFrom(type) || typeof(Component).IsAssignableFrom(type))
         {
             return true;
         }
@@ -110,14 +116,14 @@ internal static class SceneLoader
         
         Type elementType = type.GetGenericArguments()[0];
         
-        return typeof(GameObject).IsAssignableFrom(elementType) || typeof(ITextRenderer).IsAssignableFrom(elementType);
+        return typeof(GameObject).IsAssignableFrom(elementType) || typeof(Component).IsAssignableFrom(elementType);
 
     }
     
     private static void SetObjectReferences(
-        GameObject gameObject, Dictionary<string, JsonElement> properties, Dictionary<string, GameObject> namedObjects)
+        Component component, Dictionary<string, JsonElement> properties, Dictionary<string, GameObject> namedObjects)
     {
-        Type type = gameObject.GetType();
+        Type type = component.GetType();
         
         FieldInfo[] fields = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
         foreach (FieldInfo field in fields)
@@ -129,7 +135,7 @@ internal static class SceneLoader
             object? convertedValue = ConvertJsonValueWithReferences(value, field.FieldType, namedObjects);
             if (convertedValue != null)
             {
-                field.SetValue(gameObject, convertedValue);
+                field.SetValue(component, convertedValue);
             }
         }
     }
@@ -151,11 +157,16 @@ internal static class SceneLoader
                 return jsonElement.GetBoolean();
             if (targetType == typeof(long))
                 return jsonElement.GetInt64();
+            
+            // 不要對複雜的泛型類型（如 List<>）進行直接反序列化
+            if (targetType.IsGenericType)
+                return null;
                 
             return JsonSerializer.Deserialize(jsonElement.GetRawText(), targetType);
         }
-        catch
+        catch (Exception e)
         {
+            Console.WriteLine($"ConvertJsonValue error for type {targetType.Name}: {e.Message}");
             return null;
         }
     }
@@ -169,7 +180,51 @@ internal static class SceneLoader
             {
                 Type elementType = targetType.GetGenericArguments()[0];
                 
-                if (jsonElement.ValueKind == JsonValueKind.Array)
+                if (jsonElement.ValueKind == JsonValueKind.Object && 
+                    jsonElement.TryGetProperty("ElementType", out JsonElement elementTypeElement) &&
+                    jsonElement.TryGetProperty("References", out JsonElement referencesElement))
+                {
+                    string? elementTypeName = elementTypeElement.GetString();
+                    if (string.IsNullOrEmpty(elementTypeName)) return null;
+                    
+                    Assembly assembly = Assembly.GetExecutingAssembly();
+                    Type? resolvedElementType = assembly.GetTypes()
+                        .FirstOrDefault(t => t.Name == elementTypeName && typeof(Component).IsAssignableFrom(t));
+                    
+                    if (resolvedElementType == null) 
+                    {
+                        Console.WriteLine($"Could not find component type: {elementTypeName}");
+                        return null;
+                    }
+                    
+                    IList list = (IList)Activator.CreateInstance(targetType)!;
+                    
+                    foreach (JsonElement element in referencesElement.EnumerateArray())
+                    {
+                        if (element.ValueKind != JsonValueKind.String) continue;
+                        
+                        string? referenceName = element.GetString();
+
+                        if (string.IsNullOrEmpty(referenceName) ||
+                            !namedObjects.TryGetValue(referenceName, out GameObject? referencedObject)) 
+                        {
+                            continue;
+                        }
+                        
+                        Component? component = referencedObject.GetComponent(resolvedElementType);
+                        if (component != null)
+                        {
+                            list.Add(component);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Component {elementTypeName} not found in {referenceName}");
+                        }
+                    }
+                    
+                    return list;
+                }
+                else if (jsonElement.ValueKind == JsonValueKind.Array)
                 {
                     IList list = (IList)Activator.CreateInstance(targetType)!;
                     
@@ -182,9 +237,13 @@ internal static class SceneLoader
                         if (string.IsNullOrEmpty(referenceName) ||
                             !namedObjects.TryGetValue(referenceName, out GameObject? referencedObject)) continue;
                         
-                        if (elementType == typeof(ITextRenderer) && referencedObject is ITextProvider textProvider)
+                        if (typeof(Component).IsAssignableFrom(elementType))
                         {
-                            list.Add(textProvider.GetTextRenderer());
+                            Component? component = referencedObject.GetComponent(elementType);
+                            if (component != null)
+                            {
+                                list.Add(component);
+                            }
                         }
                         else if (elementType.IsInstanceOfType(referencedObject))
                         {
@@ -202,9 +261,13 @@ internal static class SceneLoader
                 if (string.IsNullOrEmpty(referenceName) ||
                     !namedObjects.TryGetValue(referenceName, out GameObject? referencedObject))
                     return ConvertJsonValue(jsonElement, targetType);
-                if (targetType == typeof(ITextRenderer) && referencedObject is ITextProvider textProvider)
+                if (typeof(Component).IsAssignableFrom(targetType))
                 {
-                    return textProvider.GetTextRenderer();
+                    Component? component = referencedObject.GetComponent(targetType);
+                    if (component != null)
+                    {
+                        return component;
+                    }
                 }
 
                 if (targetType.IsInstanceOfType(referencedObject))
@@ -215,27 +278,27 @@ internal static class SceneLoader
             
             return ConvertJsonValue(jsonElement, targetType);
         }
-        catch
+        catch (Exception e)
         {
+            Console.WriteLine(e);
             return null;
         }
     }
     
-    private static GameObject? CreateGameObject(string typeName)
+    private static Component? CreateComponent(string typeName)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
         
         Type? type = assembly.GetTypes()
             .FirstOrDefault(t => t.Name == typeName && 
-                               typeof(GameObject).IsAssignableFrom(t) &&
-                               !t.IsInterface && 
-                               !t.IsAbstract);
+                                 typeof(Component).IsAssignableFrom(t) &&
+                                 t is { IsInterface: false, IsAbstract: false });
         
         if (type == null)
         {
             return null;
         }
         
-        return Activator.CreateInstance(type) as GameObject;
+        return Activator.CreateInstance(type) as Component;
     }
 }

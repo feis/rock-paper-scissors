@@ -1,49 +1,97 @@
 {
-  "name": "GameScene",
-  "gameObjects": [
+  "Name": "GameScene",
+  "GameObjects": [
     {
-      "type": "GameManager",
-      "name": "GameManager"
+      "Name": "GameManager",
+      "Components": [
+        {
+          "Type": "GameManager"
+        }
+      ]
     },
     {
-      "type": "PromptText",
-      "name": "PromptText",
-      "properties": {
-        "promptMessage": "1:石頭, 2:布, 3:剪刀"
-      }
+      "Name": "PromptText",
+      "Components": [
+        {
+          "Type": "Text",
+          "Properties": {
+            "content": "1:石頭, 2:布, 3:剪刀"
+          }
+        },
+        {
+          "Type": "PromptText"
+        }
+      ]
     },
     {
-      "type": "SpinnerText", 
-      "name": "SpinnerText",
-      "properties": {
-        "baseMessage": "請選擇你的動作 (1-3)",
-        "animationSpeed": 0.15
-      }
+      "Name": "SpinnerText",
+      "Components": [
+        {
+          "Type": "Text",
+          "Properties": {
+            "content": "請選擇你的動作 (1-3)"
+          }
+        },
+        {
+          "Type": "SpinnerText",
+          "Properties": {
+            "AnimationSpeed": 0.15
+          }
+        }
+      ]
     },
     {
-      "type": "PlayerChoiceText",
-      "name": "PlayerChoiceText"
+      "Name": "PlayerChoiceText",
+      "Components": [
+        {
+          "Type": "Text"
+        },
+        {
+          "Type": "PlayerChoiceText"
+        }
+      ]
     },
     {
-      "type": "ComputerChoiceText",
-      "name": "ComputerChoiceText"
+      "Name": "ComputerChoiceText",
+      "Components": [
+        {
+          "Type": "Text"
+        },
+        {
+          "Type": "ComputerChoiceText"
+        }
+      ]
     },
     {
-      "type": "ResultText",
-      "name": "ResultText"
+      "Name": "ResultText",
+      "Components": [
+        {
+          "Type": "Text"
+        },
+        {
+          "Type": "ResultText"
+        }
+      ]
     },
     {
-      "type": "TextVerticalGroup",
-      "name": "MainTextGroup",
-      "properties": {
-        "textElements": [
-          "PromptText",
-          "SpinnerText",
-          "PlayerChoiceText",
-          "ComputerChoiceText",
-          "ResultText"
-        ]
-      }
+      "Name": "MainTextGroup",
+      "Components": [
+        {
+          "Type": "TextVerticalGroup",
+          "Properties": {
+            "Texts": {
+              "ElementType": "Text",
+              "References": [
+                "PromptText",
+                "SpinnerText",
+                "PlayerChoiceText",
+                "ComputerChoiceText",
+                "ResultText"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

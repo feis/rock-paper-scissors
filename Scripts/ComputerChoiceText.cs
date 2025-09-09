@@ -1,9 +1,16 @@
-using System.Text;
 using Engine;
+using JetBrains.Annotations;
 
-internal class ComputerChoiceText : GameObject, ITextProvider
+[UsedImplicitly]
+internal class ComputerChoiceText : Component
 {
-    private readonly Text text = new();
+    [SerializeField] private Text text;
+    
+    public override void Awake()
+    {
+        text = GetComponent<Text>();
+    }
+
     public override void Update(double deltaTime)
     {
         GameState state = GameManager.Instance!.GetCurrentState();
@@ -16,12 +23,8 @@ internal class ComputerChoiceText : GameObject, ITextProvider
         
         if (shouldShow && playerChoice.HasValue)
         {
-            text.SetContent($"電腦選擇了: {GetChoiceName(computerChoice)}");
+            text.Content = $"電腦選擇了: {GetChoiceName(computerChoice)}";
         }
-    }
-
-    public override void Render(StringBuilder frameBuffer)
-    {
     }
 
     private static string GetChoiceName(GameChoice choice)
@@ -35,8 +38,8 @@ internal class ComputerChoiceText : GameObject, ITextProvider
         };
     }
 
-    public ITextRenderer GetTextRenderer()
+    public override void Render(RenderingPipeline rp)
     {
-        return text;
+        text.Render(rp);
     }
 }

@@ -1,9 +1,15 @@
-using System.Text;
 using Engine;
 
-internal class PlayerChoiceText : GameObject, ITextProvider
+[Serializable]
+internal class PlayerChoiceText : Component
 {
-    private readonly Text text = new();
+    [SerializeField] 
+    private Text text;
+
+    public override void Awake()
+    {
+        text = GetComponent<Text>();
+    }
 
     public override void Update(double deltaTime)
     {
@@ -16,12 +22,8 @@ internal class PlayerChoiceText : GameObject, ITextProvider
         
         if (shouldShow && playerChoice.HasValue)
         {
-            text.SetContent($"你剛選擇了: {GetChoiceName(playerChoice.Value)}");
+            text.Content = $"你剛選擇了: {GetChoiceName(playerChoice.Value)}";
         }
-    }
-
-    public override void Render(StringBuilder frameBuffer)
-    {
     }
 
     private static string GetChoiceName(GameChoice choice)
@@ -35,8 +37,8 @@ internal class PlayerChoiceText : GameObject, ITextProvider
         };
     }
 
-    public ITextRenderer GetTextRenderer()
+    public override void Render(RenderingPipeline rp)
     {
-        return text;
+        text.Render(rp);
     }
 }

@@ -1,7 +1,8 @@
-using System.Text;
 using Engine;
+using JetBrains.Annotations;
 
-internal class GameManager : GameObject
+[UsedImplicitly]
+internal class GameManager : Component
 {
     public static GameManager? Instance;
     
@@ -91,11 +92,7 @@ internal class GameManager : GameObject
                 throw new ArgumentOutOfRangeException();
         }
     }
-
-    public override void Render(StringBuilder frameBuffer)
-    {
-    }
-
+    
     private void SetComputerChoice()
     {
         computerChoice = (GameChoice)random.Next(1, 4);

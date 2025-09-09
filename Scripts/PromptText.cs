@@ -1,28 +1,23 @@
-using System.Text;
 using Engine;
 
-internal class PromptText : GameObject, ITextProvider
+[Serializable]
+internal class PromptText : Component
 {
-    [SerializeField]
-    private string promptMessage = "1:石頭, 2:布, 3:剪刀";
-    
-    private Text? text;
+    private Text text;
+
+    public override void Awake()
+    {
+        text = GetComponent<Text>();
+    }
 
     public override void Update(double deltaTime)
     {
-        text ??= new Text(promptMessage);
-        
         GameState state = GameManager.Instance!.GetCurrentState();
         text.SetActive(state == GameState.WaitingForInput);
     }
 
-    public override void Render(StringBuilder frameBuffer)
+    public override void Render(RenderingPipeline rp)
     {
-    }
-
-    public ITextRenderer GetTextRenderer()
-    {
-        text ??= new Text(promptMessage);
-        return text;
+        text.Render(rp);
     }
 }

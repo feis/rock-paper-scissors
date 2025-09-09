@@ -1,26 +1,26 @@
-using System.Text;
 using Engine;
+using JetBrains.Annotations;
 
-internal class TextVerticalGroup : GameObject
+[UsedImplicitly]
+internal class TextVerticalGroup : Component
 {
-    [SerializeField]
-    private List<ITextRenderer> textElements = new();
-
-    public void Add(ITextRenderer textElement)
-    {
-        textElements.Add(textElement);
-    }
+    [SerializeField(Name = "Texts")] 
+    private List<Text> texts = new();
 
     public override void Update(double deltaTime)
     {
-    }
-
-    public override void Render(StringBuilder frameBuffer)
-    {
-        foreach (ITextRenderer element in textElements.Where(element => element.IsActive))
+        int order = 0;
+        foreach (Text text in texts)
         {
-            element.Render(frameBuffer);
-            frameBuffer.AppendLine();
+            if (text.IsActive)
+            {
+                text.SetOrder(order);
+                ++order;
+            }
+            else
+            {
+                text.SetOrder(-1);
+            }
         }
     }
 }

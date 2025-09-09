@@ -1,17 +1,22 @@
-using System.Text;
 using Engine;
 
-internal class SpinnerText : GameObject, ITextProvider
+[Serializable]
+internal class SpinnerText : Component
 {
-    [SerializeField]
-    private string baseMessage = "請選擇你的動作 (1-3)";
-    
     [SerializeField] 
     private double animationSpeed = 0.25;
+
+    [SerializeField] private Text? text;
     
-    private readonly Text text = new();
     private readonly char[] spinChars = ['|', '/', '-', '\\'];
-    private double elapsedTime;
+
+    private string baseMessage;
+    
+    public override void Awake()
+    {
+        text = GetComponent<Text>(); 
+        baseMessage = text!.Content;
+    }
 
     public override void Update(double deltaTime)
     {
@@ -19,23 +24,18 @@ internal class SpinnerText : GameObject, ITextProvider
         
         if (state == GameState.WaitingForInput)
         {
-            text.SetActive(true);
-            elapsedTime = GameManager.Instance.GetElapsedTime();
+            text!.SetActive(true);
+            double elapsedTime = GameManager.Instance.GetElapsedTime();
             int animationIndex = (int)Math.Round(elapsedTime / animationSpeed);
-            text.SetContent($"{baseMessage} {spinChars[animationIndex % 4]}");
+            text.Content = $"{baseMessage} {spinChars[animationIndex % 4]}";
         }
         else
         {
-            text.SetActive(false);
+            text!.SetActive(false);
         }
     }
 
-    public override void Render(StringBuilder frameBuffer)
+    public override void Render(RenderingPipeline rp)
     {
-    }
-
-    public ITextRenderer GetTextRenderer()
-    {
-        return text;
     }
 }

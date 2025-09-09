@@ -1,34 +1,35 @@
-using System.Text;
+using JetBrains.Annotations;
 
 namespace Engine;
 
-internal class Text : ITextRenderer
+[UsedImplicitly]
+internal class Text : Component
 {
-    private string content;
-    public bool IsActive { get; private set; }
-
-    public Text()
-    {
-        content = string.Empty;
-    }
+    private int order = -1;
     
-    public Text(string content)
-    {
-        this.content = content;
+    [SerializeField]
+    private string content = string.Empty;
+    
+    public string Content 
+    { 
+        get => content; 
+        set => content = value; 
     }
 
-    public void SetContent(string value)
+    public bool IsActive { get; private set; } = true;
+
+    public void SetActive(bool value)
     {
-        content = value;
+        IsActive = value;
     }
 
-    public void SetActive(bool active)
+    public override void Render(RenderingPipeline rp)
     {
-        IsActive = active;
+        rp.Draw(order, content);
     }
 
-    public void Render(StringBuilder buffer)
+    public void SetOrder(int value)
     {
-        buffer.Append(content);
+        order = value;
     }
 }

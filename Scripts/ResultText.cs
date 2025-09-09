@@ -1,9 +1,14 @@
-using System.Text;
 using Engine;
 
-internal class ResultText : GameObject, ITextProvider
+[Serializable]
+internal class ResultText : Component
 {
-    private readonly Text text = new();
+    [SerializeField] private Text text;
+
+    public override void Awake()
+    {
+        text = GetComponent<Text>();
+    }
 
     public override void Update(double deltaTime)
     {
@@ -17,12 +22,13 @@ internal class ResultText : GameObject, ITextProvider
         
         if (shouldShow && playerChoice.HasValue)
         {
-            text.SetContent(GetResultMessage(gameResult));
+            text.Content = GetResultMessage(gameResult);
         }
     }
 
-    public override void Render(StringBuilder frameBuffer)
+    public override void Render(RenderingPipeline rp)
     {
+        text.Render(rp);
     }
 
     private static string GetResultMessage(GameResult result)
@@ -34,10 +40,5 @@ internal class ResultText : GameObject, ITextProvider
             GameResult.Draw => "平手！",
             _ => throw new ArgumentOutOfRangeException()
         };
-    }
-
-    public ITextRenderer GetTextRenderer()
-    {
-        return text;
     }
 }

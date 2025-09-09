@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 
 namespace Engine;
 
@@ -7,7 +6,7 @@ internal class GameEngine
 {
     private const int TargetFPS = 8;
     private readonly Stopwatch frameTimer = new();
-    private readonly StringBuilder frameBuffer = new();
+    private readonly RenderingPipeline renderingPipeline = new();
     private readonly List<GameObject> gameObjects = new();
     
     public void Run()
@@ -16,6 +15,11 @@ internal class GameEngine
         
         SceneLoader.LoadScene("Scenes/game-scene.json", gameObjects);
         
+        foreach (GameObject gameObject in gameObjects)
+        {
+            gameObject.Awake();
+        }
+        
         while (Application.IsPlaying)
         {
             double lastFrameTime = frameTimer.ElapsedMilliseconds / 1000.0;
@@ -23,18 +27,24 @@ internal class GameEngine
             
             foreach (GameObject gameObject in gameObjects)
             {
-                gameObject.Update(lastFrameTime);
+                if (gameObject.isActive)
+                {
+                    gameObject.Update(lastFrameTime);
+                }
             }
             
-            frameBuffer.Clear();
+            renderingPipeline.Begin();
 
             foreach (GameObject gameObject in gameObjects)
             {
-                gameObject.Render(frameBuffer);
+                if (gameObject.isActive)
+                {
+                    gameObject.Render(renderingPipeline);
+                }
             }
-
+            renderingPipeline.End();
             WaitForFPS();
-            SwapBuffer(frameBuffer.ToString());
+            renderingPipeline.SwapBuffers();
         }
     }
 
@@ -49,14 +59,5 @@ internal class GameEngine
         {
             Thread.Sleep(remainingTime);
         }
-    }
-    
-    private static void SwapBuffer(string output)
-    {
-        if (Application.IsPlaying)
-        {
-            Console.Clear();
-        }
-        Console.Write(output);
     }
 }
