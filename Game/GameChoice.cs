@@ -1,3 +1,5 @@
+namespace Game;
+
 internal enum GameChoice
 {
     Rock = 1,

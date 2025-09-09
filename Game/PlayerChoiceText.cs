@@ -1,13 +1,15 @@
 using System.Text;
 
-internal class ComputerChoiceText : IGameObject
+namespace Game;
+
+internal class PlayerChoiceText : IGameObject
 {
     private readonly Text text = new();
-    void IGameObject.Update(Game game,  StringBuilder frameBuffer)
+
+    void IGameObject.Update(double deltaTime)
     {
-        GameState state = game.GetCurrentState();
-        GameChoice computerChoice = game.GetComputerChoice();
-        GameChoice? playerChoice = game.GetPlayerChoice();
+        GameState state = GameManager.Instance!.GetCurrentState();
+        var playerChoice = GameManager.Instance.GetPlayerChoice();
         
         bool shouldShow = state is GameState.RoundCompleted or GameState.DrawWaiting or GameState.GameEnding;
         
@@ -15,10 +17,14 @@ internal class ComputerChoiceText : IGameObject
         
         if (shouldShow && playerChoice.HasValue)
         {
-            text.SetContent($"電腦選擇了: {GetChoiceName(computerChoice)}");
+            text.SetContent($"你剛選擇了: {GetChoiceName(playerChoice.Value)}");
         }
     }
-    
+
+    void IGameObject.Render(StringBuilder frameBuffer)
+    {
+    }
+
     private static string GetChoiceName(GameChoice choice)
     {
         return choice switch

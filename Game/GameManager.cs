@@ -1,9 +1,12 @@
 using System.Text;
 
-internal class Game
+namespace Game;
+
+internal class GameManager : IGameObject
 {
+    public static GameManager? Instance;
+    
     private readonly Random random = new();
-    private readonly List<IGameObject> gameObjects = new();
     
     private GameChoice? playerChoice;
     private GameChoice computerChoice;
@@ -11,34 +14,7 @@ internal class Game
     private GameState currentState = GameState.GameStart;
     private double roundEndTime;
     private double gameEndTime;
-    private double elapsedTime;
-    
-    public Game()
-    {
-        PromptText promptText = new();
-        SpinnerText spinnerText = new();
-        PlayerChoiceText playerChoiceText = new();
-        ComputerChoiceText computerChoiceText = new();
-        ResultText resultText = new();
-        
-        gameObjects.Add(promptText);
-        gameObjects.Add(spinnerText);
-        gameObjects.Add(playerChoiceText);
-        gameObjects.Add(computerChoiceText);
-        gameObjects.Add(resultText);
-        
-        TextVerticalGroup textVerticalGroup = new();
-
-        textVerticalGroup.Add(promptText.GetTextRenderer());
-        textVerticalGroup.Add(spinnerText.GetTextRenderer());
-        textVerticalGroup.Add(playerChoiceText.GetTextRenderer());
-        textVerticalGroup.Add(computerChoiceText.GetTextRenderer());
-        textVerticalGroup.Add(resultText.GetTextRenderer());
-
-        gameObjects.Add(textVerticalGroup);
-    }
-    
-    public bool IsFinished => currentState == GameState.Finished;
+    private double elapsedTime; 
     
     public GameState GetCurrentState() => currentState;
     public GameChoice? GetPlayerChoice() => playerChoice;
@@ -46,7 +22,12 @@ internal class Game
     public GameResult GetGameResult() => gameResult;
     public double GetElapsedTime() => elapsedTime;
 
-    public void Update(double deltaTime, StringBuilder frameBuffer)
+    public GameManager()
+    {
+        Instance = this;
+    }
+    
+    void IGameObject.Update(double deltaTime)
     {
         elapsedTime += deltaTime;
         
@@ -100,6 +81,7 @@ internal class Game
                 if (elapsedTime - gameEndTime >= 1)
                 {
                     currentState = GameState.Finished;
+                    Application.IsPlaying = false;
                 }
                 break;
             }
@@ -109,11 +91,10 @@ internal class Game
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        
-        foreach (IGameObject gameObject in gameObjects)
-        {
-            gameObject.Update(this, frameBuffer);
-        }
+    }
+
+    void IGameObject.Render(StringBuilder frameBuffer)
+    {
     }
 
     private void SetComputerChoice()
@@ -129,8 +110,8 @@ internal class Game
         }
 
         bool playerWins = (playerChoice == GameChoice.Rock && computerChoice == GameChoice.Scissors) ||
-                         (playerChoice == GameChoice.Paper && computerChoice == GameChoice.Rock) ||
-                         (playerChoice == GameChoice.Scissors && computerChoice == GameChoice.Paper);
+                          (playerChoice == GameChoice.Paper && computerChoice == GameChoice.Rock) ||
+                          (playerChoice == GameChoice.Scissors && computerChoice == GameChoice.Paper);
 
         return playerWins ? GameResult.Win : GameResult.Lose;
     }

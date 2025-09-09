@@ -1,5 +1,7 @@
 using System.Text;
 
+namespace Game;
+
 internal class TextVerticalGroup : IGameObject
 {
     private readonly List<ITextRenderer> textElements = new();
@@ -8,9 +10,12 @@ internal class TextVerticalGroup : IGameObject
     {
         textElements.Add(textElement);
     }
-    
 
-    void IGameObject.Update(Game game, StringBuilder frameBuffer)
+    public void Update(double deltaTime)
+    {
+    }
+
+    public void Render(StringBuilder frameBuffer)
     {
         foreach (ITextRenderer element in textElements.Where(element => element.IsActive))
         {

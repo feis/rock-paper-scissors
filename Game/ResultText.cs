@@ -1,14 +1,16 @@
 using System.Text;
 
+namespace Game;
+
 internal class ResultText : IGameObject
 {
     private readonly Text text = new();
 
-    void IGameObject.Update(Game game, StringBuilder frameBuffer)
+    void IGameObject.Update(double deltaTime)
     {
-        GameState state = game.GetCurrentState();
-        GameResult gameResult = game.GetGameResult();
-        GameChoice? playerChoice = game.GetPlayerChoice();
+        GameState state = GameManager.Instance!.GetCurrentState();
+        GameResult gameResult = GameManager.Instance.GetGameResult();
+        GameChoice? playerChoice = GameManager.Instance.GetPlayerChoice();
         
         bool shouldShow = state is GameState.RoundCompleted or GameState.DrawWaiting or GameState.GameEnding;
         
@@ -19,7 +21,11 @@ internal class ResultText : IGameObject
             text.SetContent(GetResultMessage(gameResult));
         }
     }
-    
+
+    void IGameObject.Render(StringBuilder frameBuffer)
+    {
+    }
+
     private static string GetResultMessage(GameResult result)
     {
         return result switch
