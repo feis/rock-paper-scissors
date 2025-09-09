@@ -3,12 +3,7 @@ using System.Text;
 internal class Game
 {
     private readonly Random random = new();
-    private readonly TextVerticalGroup mainTextVerticalGroup = new();
-    private readonly Text promptText;
-    private readonly Text spinnerText;
-    private readonly Text playerChoiceText;
-    private readonly Text computerChoiceText;
-    private readonly Text resultText;
+    private readonly List<IGameObject> gameObjects = new();
     
     private GameChoice? playerChoice;
     private GameChoice computerChoice;
@@ -16,30 +11,44 @@ internal class Game
     private GameState currentState = GameState.GameStart;
     private double roundEndTime;
     private double gameEndTime;
-    private int animationIndex;
     private double elapsedTime;
     
     public Game()
     {
-        promptText = new Text("1:石頭, 2:布, 3:剪刀");
-        spinnerText = new Text("");
-        playerChoiceText = new Text("");
-        computerChoiceText = new Text("");
-        resultText = new Text("");
+        PromptText promptText = new();
+        SpinnerText spinnerText = new();
+        PlayerChoiceText playerChoiceText = new();
+        ComputerChoiceText computerChoiceText = new();
+        ResultText resultText = new();
         
-        mainTextVerticalGroup.Add(promptText);
-        mainTextVerticalGroup.Add(spinnerText);
-        mainTextVerticalGroup.Add(playerChoiceText);
-        mainTextVerticalGroup.Add(computerChoiceText);
-        mainTextVerticalGroup.Add(resultText);
+        gameObjects.Add(promptText);
+        gameObjects.Add(spinnerText);
+        gameObjects.Add(playerChoiceText);
+        gameObjects.Add(computerChoiceText);
+        gameObjects.Add(resultText);
+        
+        TextVerticalGroup textVerticalGroup = new();
+
+        textVerticalGroup.Add(promptText.GetTextRenderer());
+        textVerticalGroup.Add(spinnerText.GetTextRenderer());
+        textVerticalGroup.Add(playerChoiceText.GetTextRenderer());
+        textVerticalGroup.Add(computerChoiceText.GetTextRenderer());
+        textVerticalGroup.Add(resultText.GetTextRenderer());
+
+        gameObjects.Add(textVerticalGroup);
     }
     
     public bool IsFinished => currentState == GameState.Finished;
+    
+    public GameState GetCurrentState() => currentState;
+    public GameChoice? GetPlayerChoice() => playerChoice;
+    public GameChoice GetComputerChoice() => computerChoice;
+    public GameResult GetGameResult() => gameResult;
+    public double GetElapsedTime() => elapsedTime;
 
     public void Update(double deltaTime, StringBuilder frameBuffer)
     {
         elapsedTime += deltaTime;
-        frameBuffer.Clear();
         
         switch (currentState)
         {
@@ -57,13 +66,12 @@ internal class Game
                     if (int.TryParse(input, out int choice) && choice is >= 1 and <= 3)
                     {
                         playerChoice = (GameChoice)choice;
-                        computerChoice = GetComputerChoice();
+                        SetComputerChoice();
                         gameResult = PlayRound(playerChoice.Value, computerChoice);
                         currentState = GameState.RoundCompleted;
                         roundEndTime = elapsedTime;
                     }
                 }
-                animationIndex = (int)Math.Round(elapsedTime / 0.25);
                 break;
             }
             case GameState.RoundCompleted:
@@ -102,57 +110,15 @@ internal class Game
                 throw new ArgumentOutOfRangeException();
         }
         
-        UpdateTextElements();
-        mainTextVerticalGroup.Render(frameBuffer);
-    }
-    
-    private void UpdateTextElements()
-    {
-        switch (currentState)
+        foreach (IGameObject gameObject in gameObjects)
         {
-            case GameState.WaitingForInput:
-                promptText.SetActive(true);
-                spinnerText.SetActive(true);
-                playerChoiceText.SetActive(false);
-                computerChoiceText.SetActive(false);
-                resultText.SetActive(false);
-                
-                char[] spinChars = ['|', '/', '-', '\\'];
-                spinnerText.SetContent($"請選擇你的動作 (1-3) {spinChars[animationIndex % 4]}");
-                break;
-                
-            case GameState.RoundCompleted:
-            case GameState.DrawWaiting:
-            case GameState.GameEnding:
-                promptText.SetActive(false);
-                spinnerText.SetActive(false);
-                playerChoiceText.SetActive(true);
-                computerChoiceText.SetActive(true);
-                resultText.SetActive(true);
-                
-                if (playerChoice.HasValue)
-                {
-                    playerChoiceText.SetContent($"你剛選擇了: {GetChoiceName(playerChoice.Value)}");
-                    computerChoiceText.SetContent($"電腦選擇了: {GetChoiceName(computerChoice)}");
-                    resultText.SetContent(GetResultMessage(gameResult));
-                }
-                break;
-
-            case GameState.GameStart:
-            case GameState.Finished:
-            default:
-                promptText.SetActive(false);
-                spinnerText.SetActive(false);
-                playerChoiceText.SetActive(false);
-                computerChoiceText.SetActive(false);
-                resultText.SetActive(false);
-                break;
+            gameObject.Update(this, frameBuffer);
         }
     }
 
-    private GameChoice GetComputerChoice()
+    private void SetComputerChoice()
     {
-        return (GameChoice)random.Next(1, 4);
+        computerChoice = (GameChoice)random.Next(1, 4);
     }
 
     private static GameResult PlayRound(GameChoice playerChoice, GameChoice computerChoice)
@@ -167,27 +133,5 @@ internal class Game
                          (playerChoice == GameChoice.Scissors && computerChoice == GameChoice.Paper);
 
         return playerWins ? GameResult.Win : GameResult.Lose;
-    }
-
-    private static string GetChoiceName(GameChoice choice)
-    {
-        return choice switch
-        {
-            GameChoice.Rock => "石頭",
-            GameChoice.Paper => "布",
-            GameChoice.Scissors => "剪刀",
-            _ => throw new ArgumentOutOfRangeException()
-        };
-    }
-
-    private static string GetResultMessage(GameResult result)
-    {
-        return result switch
-        {
-            GameResult.Win => "你贏了！",
-            GameResult.Lose => "你輸了！",
-            GameResult.Draw => "平手！",
-            _ => throw new ArgumentOutOfRangeException()
-        };
     }
 }

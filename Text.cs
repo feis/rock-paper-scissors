@@ -5,6 +5,11 @@ internal class Text : ITextRenderer
     private string content;
     public bool IsActive { get; set; } = true;
 
+    public Text()
+    {
+        content = string.Empty;
+    }
+    
     public Text(string content)
     {
         this.content = content;
